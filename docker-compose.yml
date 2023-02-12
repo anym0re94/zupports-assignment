@@ -1,0 +1,53 @@
+version: "3.8"
+services:
+  zupports_assignment_api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: zupports_assignment_api:prod
+    command: [ "php-fpm" ]
+    container_name: zupports_assignment_api
+    depends_on:
+      - zupports_assignment_cache
+    networks:
+      - zupports_assignment_network
+    volumes:
+      - ./api/routes:/app_api/routes
+      - ./api/app:/app_api/app
+      - ./api/php/app.ini:/usr/local/etc/php/conf.d/app.ini
+      - zupports_assignment_api_volume:/app_api
+
+  zupports_assignment_cache:
+    image: redis:7.0-alpine
+    command: redis-server --include /usr/local/etc/redis/redis.conf
+    container_name: zupports_assignment_cache
+    networks:
+      - zupports_assignment_network
+    restart: always
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+
+  zupports_assignment_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: [ nginx-debug, "-g", "daemon off;" ]
+    container_name: zupports_assignment_frontend
+    depends_on:
+      - zupports_assignment_api
+    image: zupports_assignment_frontend:prod
+    networks:
+      - zupports_assignment_network
+    ports:
+      - "80:80"
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - zupports_assignment_api_volume:/app_api:ro
+
+networks:
+  zupports_assignment_network:
+
+volumes:
+  zupports_assignment_api_volume:
