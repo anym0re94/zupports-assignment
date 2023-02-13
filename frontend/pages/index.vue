@@ -24,10 +24,17 @@
       <b-row>
         <b-col cols="12">
           <b-card class="pt-3">
-            <b-card-title v-html="cardTitle" class="pl-3"></b-card-title>
+            <b-card-title class="pl-3" v-html="cardTitle"></b-card-title>
             <b-overlay :show="isLoading" rounded="sm">
               <b-card-body class="mt-3">
-                <b-row>
+                <b-row v-if="isError">
+                  <b-col cols="12">
+                    <span class="pl-2 text-danger">
+                      {{ errorStatus }}
+                    </span>
+                  </b-col>
+                </b-row>
+                <b-row v-else>
                   <b-col
                     v-for="restaurant in restaurantList"
                     :key="restaurant.place_id"
@@ -53,13 +60,14 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      searchQuery: 'Bang sue',
+      cancelSource: null,
+      isCanceled: false,
       isLoading: false,
+      isError: true,
+      errorStatus: null,
       restaurantList: [],
+      searchQuery: 'Bang sue',
     }
-  },
-  mounted() {
-    this.getRestaurant()
   },
   computed: {
     cardTitle() {
@@ -76,29 +84,6 @@ export default {
       } near <i>${this.searchQuery}</i>.`
     },
   },
-  methods: {
-    getRestaurant() {
-      this.isLoading = true
-      this.restaurantList = []
-
-      this.$axios
-        .$get(`/restaurant`, {
-          params: {
-            search: this.searchQuery.trim(),
-          },
-        })
-        .then(this.renderRestaurant)
-        .catch(() => {
-          this.restaurantList = []
-        })
-        .finally(() => {
-          this.isLoading = false
-        })
-    },
-    renderRestaurant(restaurantList) {
-      this.restaurantList = restaurantList
-    },
-  },
   watch: {
     searchQuery(current, previous) {
       if (current === previous) {
@@ -106,6 +91,69 @@ export default {
       }
 
       this.getRestaurant()
+    },
+  },
+  mounted() {
+    this.getRestaurant()
+  },
+
+  methods: {
+    getRestaurant() {
+      if (this.cancelSource) {
+        this.cancelSource.cancel()
+      }
+      // console.info(this.abortController)
+
+      this.isError = false
+      this.errorStatus = null
+      this.isLoading = true
+      this.restaurantList = []
+
+      this.cancelSource = this.$axios.CancelToken.source()
+      // console.info('cancelSource', this.cancelSource)
+
+      this.$axios
+        .$get(`/restaurant`, {
+          cancelToken: this.cancelSource.token,
+          params: {
+            search: this.searchQuery.trim(),
+          },
+        })
+        .then(this.checkRestaurant)
+        .then(this.renderRestaurant)
+        .catch((error) => {
+          if (this.$axios.isCancel(error)) {
+            this.isCanceled = true
+          } else {
+            this.isCanceled = false
+            this.isError = true
+            this.errorStatus = error.message
+          }
+
+          this.restaurantList = []
+        })
+        .finally(() => {
+          if (this.isCanceled) {
+            this.isLoading = true
+            return
+          }
+
+          this.isLoading = false
+          this.cancelSource = null
+        })
+    },
+    checkRestaurant(response) {
+      this.isCanceled = false
+
+      if (response.error) {
+        this.isError = true
+        this.errorStatus = response.detail
+      }
+
+      return response
+    },
+    renderRestaurant(restaurantList) {
+      this.restaurantList = restaurantList
     },
   },
 }
