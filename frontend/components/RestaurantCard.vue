@@ -17,15 +17,17 @@
     </b-card-body>
 
     <b-list-group flush>
-      <b-list-group-item v-if="restaurant.opening_hours?.open_now">
+      <b-list-group-item
+        v-if="restaurant.opening_hours && restaurant.opening_hours.open_now"
+      >
         <b-icon icon="check-lg" class="mr-2" variant="success"></b-icon>
         Open Now
       </b-list-group-item>
       <b-list-group-item v-else>
-        <b-icon icon="x-circle" class="mr-2" variant="danger"> </b-icon>
+        <b-icon icon="x-circle" class="mr-2" variant="danger"></b-icon>
         Closed Now
       </b-list-group-item>
-      <b-list-group-item>
+      <b-list-group-item v-if="restaurant.user_ratings_total">
         <b-icon icon="people-fill" class="mr-2"></b-icon>
         {{ restaurant.user_ratings_total }} user ratings
       </b-list-group-item>
@@ -36,7 +38,9 @@
         </a>
       </b-list-group-item>
     </b-list-group>
-    <b-card-footer>{{ restaurant.vicinity }}</b-card-footer>
+    <b-card-footer v-if="restaurant.vicinity">
+      {{ restaurant.vicinity }}
+    </b-card-footer>
   </b-card>
 </template>
 
@@ -46,6 +50,9 @@ export default {
     restaurant: {
       type: Object,
       required: true,
+      default() {
+        return {}
+      },
     },
   },
   methods: {
