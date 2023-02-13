@@ -10,7 +10,7 @@
           <b-form class="w-100">
             <b-form-input
               v-model="searchQuery"
-              debounce="500"
+              debounce="650"
               placeholder="Search for restaurant here !"
               size="md"
               class="font-weight-bold text-center"
@@ -71,6 +71,10 @@ export default {
   },
   computed: {
     cardTitle() {
+      if (!this.searchQuery.trim()) {
+        return `Please type any search keyword on the box above.`
+      }
+
       if (this.isLoading) {
         return `Hang tight, we're searching for restaurants near <i>${this.searchQuery}</i> for you.`
       }
@@ -86,7 +90,9 @@ export default {
   },
   watch: {
     searchQuery(current, previous) {
-      if (current === previous) {
+      this.isError = false
+
+      if (current.trim() === '' || current === previous) {
         return
       }
 
@@ -127,7 +133,7 @@ export default {
           } else {
             this.isCanceled = false
             this.isError = true
-            this.errorStatus = error.message
+            this.errorStatus = error.response?.data?.detail || error.message
           }
 
           this.restaurantList = []
