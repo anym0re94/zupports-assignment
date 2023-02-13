@@ -5,39 +5,44 @@
 
       <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
 
-      <b-collapse id="nav-collapse" is-nav>
-        <b-navbar-nav class="mx-auto">
-          <b-nav-form>
+      <b-collapse id="nav-collapse" is-nav class="justify-content-center">
+        <b-navbar-nav class="w-50">
+          <b-form class="w-100">
             <b-form-input
               v-model="searchQuery"
               debounce="500"
               placeholder="Search for restaurant here !"
               size="md"
-              class=""
+              class="font-weight-bold text-center"
             >
             </b-form-input>
-          </b-nav-form>
+          </b-form>
         </b-navbar-nav>
       </b-collapse>
     </b-navbar>
-    <b-container>
+    <b-container class="pt-3">
       <b-row>
-        <b-col>
-          <b-icon
-            v-if="isLoading"
-            icon="arrow-clockwise"
-            animation="spin"
-            font-scale=""
-          ></b-icon>
+        <b-col cols="12">
+          <b-card class="pt-3">
+            <b-card-title v-html="cardTitle" class="pl-3"></b-card-title>
+            <b-overlay :show="isLoading" rounded="sm">
+              <b-card-body class="mt-3">
+                <b-row>
+                  <b-col
+                    v-for="restaurant in restaurantList"
+                    :key="restaurant.place_id"
+                    cols="12"
+                    md="6"
+                    lg="4"
+                    class="mb-3"
+                  >
+                    <RestaurantCard :restaurant="restaurant" />
+                  </b-col>
+                </b-row>
+              </b-card-body>
+            </b-overlay>
+          </b-card>
         </b-col>
-      </b-row>
-      <b-row>
-        <b-col>
-          We found {{ restaurantList.length }} near {{ searchQuery }}
-        </b-col>
-      </b-row>
-      <b-row>
-        <b-col>{{ restaurantList }}</b-col>
       </b-row>
     </b-container>
   </div>
@@ -53,9 +58,28 @@ export default {
       restaurantList: [],
     }
   },
+  mounted() {
+    this.getRestaurant()
+  },
+  computed: {
+    cardTitle() {
+      if (this.isLoading) {
+        return `Hang tight, we're searching for restaurants near <i>${this.searchQuery}</i> for you.`
+      }
+
+      if (!this.restaurantList.length) {
+        return `Sorry, there is no restaurant near <i>${this.searchQuery}</i>.`
+      }
+
+      return `We found ${this.restaurantList.length} restaurant${
+        this.restaurantList.length > 1 ? 's' : ''
+      } near <i>${this.searchQuery}</i>.`
+    },
+  },
   methods: {
     getRestaurant() {
       this.isLoading = true
+      this.restaurantList = []
 
       this.$axios
         .$get(`/restaurant`, {
@@ -86,3 +110,8 @@ export default {
   },
 }
 </script>
+<style>
+.container {
+  margin-top: 56px;
+}
+</style>
