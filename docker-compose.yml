@@ -12,7 +12,6 @@ services:
     networks:
       - zupports_assignment_network
     volumes:
-      - ./api/php/app.ini:/usr/local/etc/php/conf.d/app.ini
       - zupports_assignment_api_volume:/app_api
 
   zupports_assignment_cache:
