@@ -60,29 +60,35 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      cancelSource: null,
-      isCanceled: false,
-      isLoading: false,
-      isError: true,
-      errorStatus: null,
-      restaurantList: [],
-      searchQuery: 'Bang sue',
+      cancelSource: null, // kind of global cancelSource (token) that will be used to cancel API request
+      isCanceled: false, // determine if API is canceled or not
+      isLoading: false, // determine if API is loading or not
+      isError: true, // determine if API is error or not
+      errorStatus: null, // error status to display
+      restaurantList: [], // list of restaurant to be rendered
+      searchQuery: 'Bang sue', // default keyword
     }
   },
   computed: {
     cardTitle() {
+      // set the card title
+
+      // if searchQuery is empty.
       if (!this.searchQuery.trim()) {
         return `Please type any search keyword on the box above.`
       }
 
+      // if request currently loading.
       if (this.isLoading) {
         return `Hang tight, we're searching for restaurants near <i>${this.searchQuery}</i> for you.`
       }
 
+      // if got no restaurant from API.
       if (!this.restaurantList.length) {
         return `Sorry, there is no restaurant near <i>${this.searchQuery}</i>.`
       }
 
+      // if go some restaurants from API.
       return `We found ${this.restaurantList.length} restaurant${
         this.restaurantList.length > 1 ? 's' : ''
       } near <i>${this.searchQuery}</i>.`
@@ -91,7 +97,7 @@ export default {
   watch: {
     searchQuery(current, previous) {
       this.isError = false
-
+      // track for searchQuery state changes. if it's empty value don't call API.
       if (current.trim() === '' || current === previous) {
         return
       }
@@ -100,24 +106,27 @@ export default {
     },
   },
   mounted() {
+    // call getRestaurant (API request) on mounted
     this.getRestaurant()
   },
 
   methods: {
     getRestaurant() {
+      // if API request got interupted, cancel old request.
       if (this.cancelSource) {
         this.cancelSource.cancel()
       }
-      // console.info(this.abortController)
 
+      // set state to loading.
       this.isError = false
       this.errorStatus = null
       this.isLoading = true
       this.restaurantList = []
 
+      // create the cancel token to handling new keyworld interupt.
       this.cancelSource = this.$axios.CancelToken.source()
-      // console.info('cancelSource', this.cancelSource)
 
+      // perform an API request to backend.
       this.$axios
         .$get(`/restaurant`, {
           cancelToken: this.cancelSource.token,
@@ -128,6 +137,7 @@ export default {
         .then(this.checkRestaurant)
         .then(this.renderRestaurant)
         .catch((error) => {
+          // check if this request got cancelled or not.
           if (this.$axios.isCancel(error)) {
             this.isCanceled = true
           } else {
@@ -139,11 +149,13 @@ export default {
           this.restaurantList = []
         })
         .finally(() => {
+          // if request got cancelled, which mean we have a new keyword request, loading state should remains true.
           if (this.isCanceled) {
             this.isLoading = true
             return
           }
 
+          // clear loading state and dispose cancelSource.
           this.isLoading = false
           this.cancelSource = null
         })
@@ -151,6 +163,8 @@ export default {
     checkRestaurant(response) {
       this.isCanceled = false
 
+      // check if the response came with error key which mean something wrong from our API
+      // if it does, pop an error.
       if (response.error) {
         this.isError = true
         this.errorStatus = response.detail
@@ -159,6 +173,7 @@ export default {
       return response
     },
     renderRestaurant(restaurantList) {
+      // set restaurantList state to API response data
       this.restaurantList = restaurantList
     },
   },
