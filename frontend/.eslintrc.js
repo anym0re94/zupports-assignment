@@ -14,6 +14,7 @@ module.exports = {
   // add your custom rules here
   rules: {
     camelcase: 'warn',
+    'no-unreachable': 'warn',
     'vue/no-v-text-v-html-on-component': 'warn',
     'vue/valid-v-bind': 'warn',
   },
